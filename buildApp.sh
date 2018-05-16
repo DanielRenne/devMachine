@@ -6,7 +6,10 @@ directoryName=${PWD##*/}
 echo -e '
 {
   "scripts": {
-    "start": "webpack-dev-server"
+    "start":"webpack-dev-server --config webpack.config.development.js",
+    "dev":"webpack-dev-server --config webpack.config.development.js",
+    "prebuild": "rimraf dist",
+    "build": "cross-env NODE_ENV=production webpack -p --config webpack.config.production.js"
   }
 }
 ' > package.json
@@ -25,6 +28,14 @@ yarn add react-imported-component react-delay-render
 
 yarn add react-hot-loader -D
 
+yarn add extract-text-webpack-plugin@next -D
+
+yarn add postcss-loader -D
+
+yarn add rimraf cross-env -D
+
+yarn add @material-ui/core@1.0.0-rc.1 @material-ui/icons
+
 touch .babelrc
 
 echo -e '{
@@ -32,7 +43,116 @@ echo -e '{
   "plugins": ["react-hot-loader/babel"]
 }' > .babelrc 
 
-touch webpack.config.js
+touch postcss.config.js
+
+echo -e "module.exports = {
+  plugins: [require('autoprefixer')]
+};" > postcss.config.js
+
+touch webpack.config.development.js
+touch webpack.config.production.js
+
+echo -e "const path = require('path');
+const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
+module.exports = {
+  mode: 'production',
+  entry: {
+    vendor: ['semantic-ui-react'],
+    app: './src/index.js'
+  },
+  output: {
+    // We want to create the JavaScript bundles under a 
+    // 'static' directory
+    filename: 'static/[name].[hash].js',
+    // Absolute path to the desired output directory. In our 
+    //case a directory named 'dist'
+    // '__dirname' is a Node variable that gives us the absolute
+    // path to our current directory. Then with 'path.resolve' we 
+    // join directories
+    // Webpack 4 assumes your output path will be './dist' so you 
+    // can just leave this
+    // entry out.
+    path: path.resolve(__dirname, 'dist'),
+    publicPath: '/'
+  },
+  // Change to production source maps
+  devtool: 'source-map',
+  module: {
+    rules: [
+      {
+        test: /\.(js)$/,
+        exclude: /node_modules/,
+        use: ['babel-loader']
+      },
+      {
+        test: /\.css$/,
+        // We configure 'Extract Text Plugin'
+        use: ExtractTextPlugin.extract({
+          // loader that should be used when the
+          // CSS is not extracted
+          fallback: 'style-loader',
+          use: [
+            {
+              loader: 'css-loader',
+              options: {
+                modules: true,
+                // Allows to configure how many loaders 
+                // before css-loader should be applied
+                // to @import(ed) resources
+                importLoaders: 1,
+                camelCase: true,
+                // Create source maps for CSS files
+                sourceMap: true
+              }
+            },
+            {
+              // PostCSS will run before css-loader and will 
+              // minify and autoprefix our CSS rules. We are also
+              // telling it to only use the last 2 
+              // versions of the browsers when autoprefixing
+              loader: 'postcss-loader',
+              options: {
+                config: {
+                  ctx: {
+                    autoprefixer: {
+                      browsers: 'last 2 versions'
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        })
+      }
+    ]
+  },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          chunks: 'initial',
+          test: 'vendor',
+          name: 'vendor',
+          enforce: true
+        }
+      }
+    }
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'public/index.html',
+      favicon: 'public/favicon.ico'
+    }),
+    
+    // Create the stylesheet under 'styles' directory
+    new ExtractTextPlugin({
+      filename: 'styles/styles.[hash].css',
+      allChunks: true
+    })
+  ]
+};" > webpack.config.production.js
 
 echo -e "const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -89,9 +209,7 @@ module.exports = {
     open: true,
     hot: true
   }
-};" > webpack.config.js
-
-
+};" > webpack.config.development.js
 
 mkdir public && cd public
 touch index.html
@@ -106,6 +224,8 @@ echo -e '<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css"></link>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <title>webpack-for-react</title>
 </head>
 
@@ -124,15 +244,19 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './components/App';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+const render = Component =>
+  ReactDOM.render(
+    <AppContainer>
+      <Component />
+    </AppContainer>,
+    document.getElementById('root')
+  );
 
 render(App);
-
-// Webpack Hot Module Replacement API
 if (module.hot) module.hot.accept('./components/App', () => render(App));" > index.js
 
 mkdir components && cd $_
-touch App.js Layout.js Layout.css Home.js DynamicPage.js NoMatch.js
+touch App.js Layout.js layout.css Home.js DynamicPage.js NoMatch.js
 
 echo -e "import React from 'react';
 import { Switch, BrowserRouter as Router, Route } from 'react-router-dom';
@@ -189,24 +313,18 @@ echo -e ".pull-right {
 }" > layout.css
 
 echo -e "import React from 'react';
-import { Link } from 'react-router-dom';
+
 import { Header, Container, Divider, Icon } from 'semantic-ui-react';
+import MenuAppBar from './MenuAppBar'
 
 import { pullRight, h1 } from './layout.css';
 
 const Layout = ({ children }) => {
   return (
-    <Container>
-      <Link to=\"/\">
-        <Header as=\"h1\" className={h1}>
-          webpack-for-react
-        </Header>
-      </Link>
+    <Container fluid>
+      <MenuAppBar />
       {children}
       <Divider />
-      <p className={pullRight}>
-        Made with <Icon name=\"heart\" color=\"red\" /> by Esau Silva
-      </p>
     </Container>
   );
 };
@@ -221,7 +339,7 @@ import Layout from './Layout';
 const Home = () => {
   return (
     <Layout>
-      <p>Hello World of React and Webpack!</p>
+      <p>HOME PAGE</p>
       <p>
         <Link to=\"/dynamic\">Navigate to Dynamic Page</Link>
       </p>
@@ -230,6 +348,117 @@ const Home = () => {
 };
 
 export default Home;" > Home.js
+
+echo -e "import React from 'react';
+import { NavLink } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { withStyles } from '@material-ui/core/styles';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
+import IconButton from '@material-ui/core/IconButton';
+import MenuIcon from '@material-ui/icons/Menu';
+import AccountCircle from '@material-ui/icons/AccountCircle';
+import Switch from '@material-ui/core/Switch';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
+import MenuItem from '@material-ui/core/MenuItem';
+import Menu from '@material-ui/core/Menu';
+
+const styles = {
+  root: {
+    flexGrow: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  menuButton: {
+    marginLeft: -12,
+    marginRight: 20,
+  },
+};
+
+class MenuAppBar extends React.Component {
+  state = {
+    auth: true,
+    anchorEl: null,
+  };
+
+  handleLogout = (event) => {
+    this.setState({ auth: false });
+  };
+
+  handleMenu = event => {
+    this.setState({ anchorEl: event.currentTarget });
+  };
+
+  handleClose = () => {
+    this.setState({ anchorEl: null });
+  };
+
+  render() {
+    const { classes } = this.props;
+    const { auth, anchorEl } = this.state;
+    const open = Boolean(anchorEl);
+
+    return (
+      <div className={classes.root}>
+        <AppBar position=\"static\">
+          <Toolbar>
+            <IconButton className={classes.menuButton} color=\"inherit\" aria-label=\"Menu\">
+              <MenuIcon />
+            </IconButton>
+            
+                <Typography variant=\"title\" color=\"inherit\" className={classes.flex}>
+                    <NavLink to=\"/\" activeStyle={{color:\"white\"}}>
+                        Sample App
+                    </NavLink>
+                </Typography>
+            
+            {auth && (
+              <div>
+                <IconButton
+                  aria-owns={open ? 'menu-appbar' : null}
+                  aria-haspopup=\"true\"
+                  onClick={this.handleMenu}
+                  color=\"inherit\"
+                >
+                  <AccountCircle />
+                </IconButton>
+                <Menu
+                  id=\"menu-appbar\"
+                  anchorEl={anchorEl}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  open={open}
+                  onClose={this.handleClose}
+                >
+                  <MenuItem onClick={this.handleClose}>Profile</MenuItem>
+                  <MenuItem onClick={this.handleClose}>My account</MenuItem>
+                  <MenuItem onClick={this.handleLogout}>Logout</MenuItem>
+                </Menu>
+              </div>
+            )}
+          </Toolbar>
+        </AppBar>
+      </div>
+    );
+  }
+}
+
+MenuAppBar.propTypes = {
+  classes: PropTypes.object.isRequired,
+};
+
+export default withStyles(styles)(MenuAppBar);" > MenuAppBar.js
+
+
 
 echo -e "import React from 'react';
 import { Header } from 'semantic-ui-react';
