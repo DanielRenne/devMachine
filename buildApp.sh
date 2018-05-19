@@ -1,4 +1,4 @@
-mkdir -p $1 && cd $1
+mkdir -p $1/web && cd $1/web
 
 directoryName=${PWD##*/} 
 
@@ -22,9 +22,9 @@ yarn init -y
 
 yarn add react react-dom react-prop-types react-router-dom semantic-ui-react
 
-yarn add babel-core babel-loader babel-preset-env babel-preset-react babel-preset-stage-1 css-loader style-loader html-webpack-plugin webpack webpack-dev-server webpack-cli -D
+yarn add babel-core babel-loader babel-preset-env babel-preset-react babel-preset-stage-1 babel-polyfill css-loader style-loader html-webpack-plugin webpack webpack-dev-server webpack-cli -D
 
-yarn add react-imported-component react-delay-render
+yarn add react-imported-component react-delay-render json-loader file-loader
 
 yarn add react-hot-loader -D
 
@@ -60,7 +60,7 @@ module.exports = {
   mode: 'production',
   entry: {
     vendor: ['semantic-ui-react'],
-    app: './src/index.js'
+    app: ['babel-polyfill','./src/index.js']
   },
   output: {
     // We want to create the JavaScript bundles under a 
@@ -75,7 +75,7 @@ module.exports = {
     // can just leave this
     // entry out.
     path: path.resolve(__dirname, 'dist'),
-    publicPath: '/'
+    publicPath: 'web/dist/'
   },
   // Change to production source maps
   devtool: 'source-map',
@@ -85,6 +85,12 @@ module.exports = {
         test: /\.(js)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
+      },
+      { 
+        type: 'javascript/auto',
+        test: /\.json$/, 
+        exclude: /node_modules/,
+        use: ['json-loader'] 
       },
       {
         test: /\.css$/,
@@ -160,7 +166,7 @@ const port = process.env.PORT || 3000;
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.js',
+  entry: ['babel-polyfill', './src/index.js'],
   output: {
     filename: '[name].[hash].js',
     publicPath: '/'
@@ -169,14 +175,17 @@ module.exports = {
     module: {
     rules: [
 
-      // First Rule
       {
         test: /\.(js)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
       },
-
-      // Second Rule
+      { 
+        type: 'javascript/auto',
+        test: /\.json$/, 
+        exclude: /node_modules/,
+        use: ['json-loader'] 
+      },
       {
         test: /\.css$/,
         use: [
@@ -223,6 +232,7 @@ echo -e '<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <base href="/">
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css"></link>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -256,16 +266,16 @@ render(App);
 if (module.hot) module.hot.accept('./components/App', () => render(App));" > index.js
 
 mkdir components && cd $_
-touch App.js Layout.js layout.css Home.js DynamicPage.js NoMatch.js
+touch App.js Layout.js layout.css NoMatch.js
 
 echo -e "import React from 'react';
 import { Switch, BrowserRouter as Router, Route } from 'react-router-dom';
 import importedComponent from 'react-imported-component';
-import Home from './Home';
+import Home from '../pages/home/Home';
 import Loading from './Loading';
 
-const AsyncDynamicPAge = importedComponent(
-  () => import('./DynamicPage'),
+const AsyncDynamicPage = importedComponent(
+  () => import('../pages/dynamic/DynamicPage'),
   {
     LoadingComponent: Loading
   }
@@ -284,7 +294,7 @@ const App = () => {
       <div>
         <Switch>
           <Route exact path=\"/\" component={Home} />
-          <Route exact path=\"/dynamic\" component={AsyncDynamicPAge} />
+          <Route exact path=\"/page/dynamic\" component={AsyncDynamicPage} />
           <Route component={AsyncNoMatch} />
         </Switch>
       </div>
@@ -331,23 +341,7 @@ const Layout = ({ children }) => {
 
 export default Layout;" > Layout.js
 
-echo -e "import React from 'react';
-import { Link } from 'react-router-dom';
 
-import Layout from './Layout';
-
-const Home = () => {
-  return (
-    <Layout>
-      <p>HOME PAGE</p>
-      <p>
-        <Link to=\"/dynamic\">Navigate to Dynamic Page</Link>
-      </p>
-    </Layout>
-  );
-};
-
-export default Home;" > Home.js
 
 echo -e "import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -491,6 +485,89 @@ const NoMatch = () => {
 };
 
 export default NoMatch;" > NoMatch.js
+
+echo -e "const Globalization = {
+    
+    keys:{},
+    load(keys){
+        this.keys = keys;
+    },
+    get(){
+        return this.keys;
+    },
+    report(){
+        console.log(this.keys);
+    }
+}
+
+export default Globalization;" > Globalization.js
+
+cd ..
+
+mkdir pages && cd $_
+mkdir home && cd $_
+
+echo -e "import React from 'react';
+import { Link } from 'react-router-dom';
+import Layout from '../../components/Layout';
+import Globalization from '../../components/Globalization';
+import i18n from './i18n.json';
+
+const Home = () => {
+  Globalization.load(i18n);
+  Globalization.report();
+  return (
+    <Layout>
+      <p>HOME PAGE</p>
+      <p>
+        <Link to=\"/page/dynamic\">Navigate to Dynamic Page</Link>
+      </p>
+    </Layout>
+  );
+};
+
+export default Home;" > Home.js
+
+echo -e '
+{
+    "test":"Home"
+}
+' > i18n.json
+
+cd ..
+
+mkdir dynamic && cd $_
+
+echo -e "import React from 'react';
+import { Header } from 'semantic-ui-react';
+import Layout from '../../components/Layout';
+import Globalization from '../../components/Globalization';
+import Loading from '../../components/Loading';
+import importedComponent from 'react-imported-component';
+import i18n from './i18n.json';
+
+const DynamicPage = () => {
+  Globalization.load(i18n);
+  Globalization.report();
+  return (
+    <Layout>
+      <Header as=\"h2\">Dynamic Page</Header>
+      <p>This page was loaded asynchronously!!!</p>
+    </Layout>
+  );
+};
+
+export default DynamicPage;" > DynamicPage.js
+
+echo -e '
+{
+    "test":"Dynamic"
+}
+' > i18n.json
+
+cd $1/web
+
+yarn build
 
 
 
