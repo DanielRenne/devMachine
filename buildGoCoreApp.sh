@@ -5,9 +5,27 @@ git clone https://github.com/DanielRenne/GoCore $GOPATH/src/github.com/DanielRen
 go install github.com/DanielRenne/GoCore/getCore
 getCore
 
+#Add Translation Tools
+go get github.com/DanielRenne/addTranslation 
+go get github.com/DanielRenne/updateTranslation 
+
+go build github.com/DanielRenne/addTranslation
+go build github.com/DanielRenne/updateTranslation
+
 mkdir -p $1
 
 cd $1
+
+cp $GOPATH/bin/addTranslation addTranslation
+cp $GOPATH/bin/updateTranslation updateTranslation
+
+echo -e '{
+    "key":"YourAPIKey",
+    "path":"web/pages",
+    "languages":[
+        "es"
+    ]
+}' > yandex.json
 
 directoryName=${PWD##*/} 
 

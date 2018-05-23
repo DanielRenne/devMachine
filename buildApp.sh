@@ -34,6 +34,8 @@ yarn add postcss-loader -D
 
 yarn add rimraf cross-env -D
 
+yarn add whatwg-fetch promise-polyfill
+
 yarn add @material-ui/core@1.0.0-rc.1 @material-ui/icons
 
 touch .babelrc
@@ -60,7 +62,7 @@ module.exports = {
   mode: 'production',
   entry: {
     vendor: ['semantic-ui-react'],
-    app: ['babel-polyfill','./src/index.js']
+    app: ['whatwg-fetch','babel-polyfill','./src/index.js']
   },
   output: {
     // We want to create the JavaScript bundles under a 
@@ -166,7 +168,7 @@ const port = process.env.PORT || 3000;
 
 module.exports = {
   mode: 'development',
-  entry: ['babel-polyfill', './src/index.js'],
+  entry: ['whatwg-fetch','babel-polyfill', './src/index.js'],
   output: {
     filename: '[name].[hash].js',
     publicPath: '/'
@@ -249,7 +251,8 @@ cd ..
 mkdir src && cd $_
 touch index.js
 
-echo -e "import { AppContainer } from 'react-hot-loader';
+echo -e "import 'promise-polyfill/src/polyfill';
+import { AppContainer } from 'react-hot-loader';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './components/App';
