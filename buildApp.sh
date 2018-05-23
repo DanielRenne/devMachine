@@ -1,6 +1,6 @@
 mkdir -p $1/web
 
-cp -R web $1/web 
+cp -R web $1 
 
 directoryName=${PWD##*/} 
 
