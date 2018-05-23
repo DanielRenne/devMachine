@@ -1,0 +1,69 @@
+{
+  "appSettings": {
+      "developerGoTrace": false, 
+      "developerLogReact": false, 
+      "developerLogState": false, 
+      "developerLogStateChangePerformance": false, 
+      "developerLogTheseObjects": [], 
+      "developerMode": true, 
+      "developerUseDLV": false, 
+      "enableSimpleTrace": false, 
+      "isDemo": false, 
+      "serverAdmins": []
+  }, 
+  "application": {
+      "bootstrapData": true, 
+      "coreDebugStackTrace": false, 
+      "csrfSecret": "mySecretCSRF", 
+      "developerUseDLV": false, 
+      "disableRootIndex": true, 
+      "domain": "0.0.0.0", 
+      "flushCoreDebugToStandardOut": false, 
+      "htmlTemplates": {
+          "directory": "templates", 
+          "directoryLevels": 1, 
+          "enabled": false
+      }, 
+      "httpPort": 8080, 
+      "httpsPort": 443, 
+      "info": {
+          "contact": {
+              "email": "", 
+              "name": "Daniel Renne", 
+              "url": ""
+          }, 
+          "description": "", 
+          "license": {
+              "name": "MIT", 
+              "url": ""
+          }, 
+          "termsOfService": "http://127.0.0.1/terms", 
+          "title": "Sample Application"
+      }, 
+      "logGophers": false, 
+      "logJoinQueries": false, 
+      "logQueries": false, 
+      "logQueryStackTraces": false, 
+      "logQueryTimes": false, 
+      "productName": "sampleApp", 
+      "releaseMode": "development", 
+      "serverFQDN": "localhost", 
+      "sessionExpirationDays": 3650, 
+      "sessionKey": "*1234SampleApp", 
+      "sessionName": "sampleApp", 
+      "sessionSecureCookie": false, 
+      "talkDirty": false, 
+      "versionDot": "1.0.0.0", 
+      "versionNumeric": 1, 
+      "webServiceOnly": false
+  }, 
+  "dbConnections": [
+      {
+          "auditHistorySizeMax": 15000000, 
+          "connectionString": "mongodb://127.0.0.1:27017/sampleApp", 
+          "database": "sampleApp", 
+          "driver": "mongoDB", 
+          "transactionSizeMax": 500000000
+      }
+  ]
+}
