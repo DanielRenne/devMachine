@@ -7,7 +7,13 @@ class APIRouter extends React.Component {
 
     componentDidMount(){
         console.log(this.props.match);
-        fetch("/test").then((response) => {
+        var url = new URL(window.location.origin + "/apiGET");
+        var params = {controller:this.props.controller, 
+                      action:(this.props.action === undefined) ? "" : this.props.action,
+                      uriParams: btoa(JSON.stringify((this.props.uriParams === undefined) ? {} : this.props.uriParams))};
+        url.search = new URLSearchParams(params);
+
+        fetch(url).then((response) => {
             // perform setState here
 
             var contentType = response.headers.get("content-type");
@@ -30,6 +36,9 @@ class APIRouter extends React.Component {
 
 APIRouter.propTypes = {
     match: PropTypes.object.isRequired,
+    controller:PropTypes.string,
+    action:PropTypes.string,
+    uriParams:PropTypes.object
 };
 
 export default APIRouter

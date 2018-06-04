@@ -15,7 +15,7 @@ const Dynamic = ({ match }) => {
     <Layout>
       <Header as="h2">Dynamic Page</Header>
       <p>This page was loaded asynchronously!!!</p>
-      <DynamicPage match={match}/>
+      <DynamicPage match={match} controller="Dynamic" uriParams={{Id:"1234"}} />
     </Layout>
   );
 };

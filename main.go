@@ -15,13 +15,13 @@ type test struct {
 
 func main() {
 	goPath := os.Getenv("GOPATH")
-	err := app.Initialize(goPath+"/src/github.com/DanielRenne/App3", "webConfig.json")
+	err := app.Initialize(goPath+"/src/github.com/DanielRenne/nextGenApp", "webConfig.json")
 	if err == nil {
 		ginServer.Router.GET("/", func(c *gin.Context) {
-			c.File(goPath + "/src/github.com/DanielRenne/App3/web/dist/index.html")
+			c.File(goPath + "/src/github.com/DanielRenne/nextGenApp/web/dist/index.html")
 		})
 		ginServer.Router.GET("/page/:fileName", func(c *gin.Context) {
-			c.File(goPath + "/src/github.com/DanielRenne/App3/web/dist/index.html")
+			c.File(goPath + "/src/github.com/DanielRenne/nextGenApp/web/dist/index.html")
 		})
 
 		ginServer.Router.GET("/test", func(c *gin.Context) {
