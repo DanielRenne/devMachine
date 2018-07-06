@@ -39,7 +39,9 @@ yarn add rimraf cross-env -D
 
 yarn add whatwg-fetch promise-polyfill
 
-yarn add @material-ui/core@1.0.0-rc.1 @material-ui/icons
+yarn add types/jss
+
+yarn add @material-ui/core @material-ui/icons
 
 yarn build
 
