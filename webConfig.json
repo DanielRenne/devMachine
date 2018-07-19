@@ -55,7 +55,8 @@
       "talkDirty": false, 
       "versionDot": "1.0.0.0", 
       "versionNumeric": 1, 
-      "webServiceOnly": false
+      "webServiceOnly": false,
+      "allowCrossOriginRequests":true
   }, 
   "dbConnections": [
       {
