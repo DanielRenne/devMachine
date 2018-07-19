@@ -2,7 +2,7 @@ import Globals from './globals'
 
 const WSocket = {
   path:"ws",
-  port:window.location.port,
+  port:Globals.serverPort(),
   domain:window.location.hostname,
   socket:null,
   socketCallBacks:[],

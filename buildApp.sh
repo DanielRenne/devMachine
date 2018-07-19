@@ -39,7 +39,7 @@ yarn add rimraf cross-env -D
 
 yarn add whatwg-fetch promise-polyfill
 
-yarn add types/jss
+yarn add autoprefixer
 
 yarn add @material-ui/core @material-ui/icons
 

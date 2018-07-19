@@ -28,6 +28,7 @@ type storePostPayload struct {
 	ExcludeFilter map[string]interface{} `json:"ExcludeFilter"`
 	Joins         []string               `json:"Joins"`
 	Path          string                 `json:"Path"`
+	Paths         []string               `json:"Paths"`
 	Value         interface{}            `json:"Value"`
 }
 
@@ -65,26 +66,24 @@ func (sc *StoreController) onStoreChange(key string, id string, path string, x i
 //Get returns an entity from a collection store.
 func (sc *StoreController) Get(vm storePostPayload) (y interface{}) {
 	y, _ = coreStore.Get(vm.Collection, vm.ID, vm.Joins)
-	// x, err := coreStore.Get(vm.Collection, vm.ID, vm.Joins)
-	// if err != nil {
-	// 	message := "Failed to retrieve entity.  Get->Collection:  " + vm.Collection + "\r\n  Id:  " + vm.ID + "\r\n" + fmt.Sprintf("%+v", vm)
-	// }
 	return
 }
 
 //GetByPath returns an entity field value from a collection store.
 func (sc *StoreController) GetByPath(vm storePostPayload) (y interface{}) {
-
 	y, _ = coreStore.GetByPath(vm.Collection, vm.ID, vm.Joins, vm.Path)
-	// if err != nil {
-	// 	message := ""
-	// 	if settings.AppSettings.DeveloperMode {
-	// 		message = "Failed to retrieve entity.  GetByPath->Collection:  " + vm.Collection + "\r\n  Id:  " + vm.ID + "\r\n" + fmt.Sprintf("%+v", vm)
-	// 	}
-	// 	respond(constants.PARAM_REDIRECT_NONE, message, constants.PARAM_SNACKBAR_TYPE_ERROR, err, constants.PARAM_TRANSACTION_ID_NONE, viewModel.EmptyViewModel{})
-	// 	return
-	// }
+	return
+}
 
+//GetByPathBatch returns an array of entity field value from a collection store.
+func (sc *StoreController) GetByPathBatch(vm storePostPayload) (y interface{}) {
+	y, _ = coreStore.GetByPathBatch(vm.Collection, vm.ID, vm.Joins, vm.Paths)
+	return
+}
+
+//GetByFilter returns an array of entities from a collection store.
+func (sc *StoreController) GetByFilter(vm storePostPayload) (y interface{}) {
+	y, _ = coreStore.GetByFilter(vm.Collection, vm.Filter, vm.InFilter, vm.ExcludeFilter, vm.Joins)
 	return
 }
 
@@ -97,5 +96,49 @@ func (sc *StoreController) Set(vm storePostPayload) (y interface{}) {
 
 	coreStore.Set(vm.Collection, vm.ID, vm.Path, vm.Value, logMessage)
 	y = emptyViewModel{}
+	return
+}
+
+//Remove removes the document from the collection.
+func (*StoreController) Remove(vm storePostPayload) (y interface{}) {
+
+	coreStore.Remove(vm.Collection, vm.ID)
+	y = emptyViewModel{}
+	return
+
+}
+
+//Publish will fetch the store record and publish to all subscribers.
+func (sc *StoreController) Publish(vm storePostPayload) (y interface{}) {
+
+	logMessage := func(topic string, message string) {
+		log.Println(topic + "\n" + message)
+	}
+
+	coreStore.Publish(vm.Collection, vm.ID, vm.Path, logMessage)
+	y = emptyViewModel{}
+	return
+}
+
+//Add creates a new collection object to the collection
+func (*StoreController) Add(vm storePostPayload) (y interface{}) {
+
+	logMessage := func(topic string, message string) {
+		log.Println(topic + "\n" + message)
+	}
+
+	y, _ = coreStore.Add(vm.Collection, vm.Value, logMessage)
+	return
+}
+
+//Append adds a new row object to a collection path
+func (*StoreController) Append(vm storePostPayload) (y interface{}) {
+
+	logMessage := func(topic string, message string) {
+		log.Println(topic + "\n" + message)
+	}
+
+	y, _ = coreStore.Append(vm.Collection, vm.ID, vm.Path, vm.Value, logMessage)
+
 	return
 }

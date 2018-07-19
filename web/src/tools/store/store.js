@@ -7,11 +7,84 @@ const Store = {
   retryInterval:3000,
   setValues:{},
   respondedValues:{},
+  getBuffer:[],
 
   init() {
     WSocket.registerSocketCallback((data, collection) => {
       this.processServerChanges(data);
     }, "Store");
+
+    setInterval(() => {
+      this.checkBatchRequests();
+    }, 100);
+
+  },
+
+
+  checkBatchRequests() {
+
+    let batchRequests = {};
+
+    for (var i = 0; i < this.getBuffer.length; i++) {
+      let request = this.getBuffer[i];
+      if (batchRequests.hasOwnProperty(request.collection)) {
+        if (batchRequests[request.collection].hasOwnProperty(request.id)) {
+          batchRequests[request.collection][request.id].paths.push({path:request.path, callback:request.callback});
+        } else {
+          batchRequests[request.collection][request.id] = {paths:[]};
+          batchRequests[request.collection][request.id].paths.push({path:request.path, callback:request.callback});
+        }
+      } else {
+        batchRequests[request.collection] = {};
+        batchRequests[request.collection][request.id] = {paths:[]};
+        batchRequests[request.collection][request.id].paths.push({path:request.path, callback:request.callback});
+      }
+
+      //Remove the getBuffer Item
+      this.getBuffer.splice(i, 1);
+      i--;
+    }
+
+
+    for (var key in batchRequests) {
+      if (batchRequests.hasOwnProperty(key)) {
+        let collection = batchRequests[key];
+        for (var id in collection) {
+          if (collection.hasOwnProperty(id)) {
+            let request = collection[id];
+            let paths = [];
+            request.paths.forEach((p) => {
+              paths.push(p.path);
+            })
+
+            let batchCallback = (data) => {
+              for (var i = 0; i < data.length; i++) {
+                let pathValue = data[i];
+                for (var j = 0; j < request.paths.length; j++) {
+                  let pathCallback = request.paths[j];
+                  if (pathCallback.path == pathValue.Path) {
+                    if (pathCallback.callback != undefined) {
+                      pathCallback.callback(pathValue.Value);
+                    }
+                  }
+                }
+              }
+              // console.log("Batch Callback", data);
+            }
+
+            Globals.post({controller:"StoreController",
+            action:"GetByPathBatch",
+            state:{Collection:key,
+                  Id:id,
+                  Joins:[],
+                  Paths:paths},
+            callback:batchCallback});
+          }
+        }
+      }
+    }
+
+    // console.log(batchRequests);
   },
 
   processServerChanges (data) {
@@ -258,18 +331,22 @@ const Store = {
                             callback:cb});
     };
 
-    call();
+    if (payload.collection == this.appName || payload.joins) {
+      call();
 
-    if (callback !== undefined) {
-      let count = 0;
-      timeout = setInterval(() => {
-        count++;
-        if (count > retryMax) {
-          clearInterval(timeout);
-          return;
-        }
-        call();
-      }, retryInterval);
+      if (callback !== undefined) {
+        let count = 0;
+        timeout = setInterval(() => {
+          count++;
+          if (count > retryMax) {
+            clearInterval(timeout);
+            return;
+          }
+          call();
+        }, retryInterval);
+      }
+    } else {
+      this.getBuffer.push({collection: payload.collection, id:payload.id, joins:(payload.joins) ? payload.joins :[], path:payload.path, callback:callback})
     }
   },
 

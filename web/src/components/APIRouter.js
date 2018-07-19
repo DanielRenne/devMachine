@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
+import Globals from '../tools/globals'
 class APIRouter extends React.Component {
 
     state = {};
 
     componentDidMount(){
         console.log(this.props.match);
-        var url = new URL(window.location.origin + "/apiGET");
+        var url = new URL(window.location.protocol + "//" + window.location.hostname + ":" + Globals.serverPort() + "/apiGET");
         var params = {controller:this.props.controller, 
                       action:(this.props.action === undefined) ? "" : this.props.action,
                       uriParams: btoa(JSON.stringify((this.props.uriParams === undefined) ? {} : this.props.uriParams))};
